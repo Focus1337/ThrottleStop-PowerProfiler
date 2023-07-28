@@ -1,12 +1,53 @@
 ﻿using PowerProfiler;
+using Serilog;
+using Serilog.Sinks.SystemConsole.Themes;
 
-var limits = args.Take(2).Select(x =>
+Log.Logger = new LoggerConfiguration()
+    .WriteTo.Console(
+        outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] <{SourceContext}> {Message:lj}{NewLine}{Exception}",
+        theme: AnsiConsoleTheme.Code)
+    .CreateLogger();
+
+try
 {
-    if (int.TryParse(x, out var res) == false)
-        throw new InvalidOperationException("Invalid number format.");
-    return res;
-}).ToList();
+    Console.WriteLine("ThrottleStop PowerProfiler by Focus");
+    Log.Information("PowerProfiler is started.");
+    if (args.Length <= 1)
+    {
+        Log.Error(
+            "You should provide 2 variables: 1st is for Long Power, 2nd is for Short Power." +
+            "\nExample: PowerProfiler.exe 40 50");
+        return;
+    }
 
-var appManager = new ApplicationManager();
-// appManager.Profiler.SetPowerLimits(limits[0], limits[1]);
-appManager.ProcessManager.RestartThrottleStop();
+    if (!int.TryParse(args[0], out var longPower) || !int.TryParse(args[1], out var shortPower))
+    {
+        Log.Error("Invalid number format.");
+        return;
+    }
+
+    var appManager = new AppManager();
+    if (appManager.Settings is null)
+        return;
+
+    if (appManager.Settings.SetPowerLimits)
+    {
+        Log.Information("Setting power limits.");
+        appManager.SetPowerLimits(longPower, shortPower);
+    }
+
+    if (appManager.Settings.RestartThrottleStop)
+    {
+        Log.Information("Restarting ThrottleStop.");
+        appManager.ProcessManager.RestartThrottleStop();
+    }
+}
+catch (Exception ex)
+{
+    Log.Fatal(ex, "PowerProfiler terminated unexpectedly");
+}
+finally
+{
+    Log.Information("PowerProfiler is closed.");
+    Log.CloseAndFlush();
+}
