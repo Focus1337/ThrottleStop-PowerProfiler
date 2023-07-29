@@ -16,8 +16,8 @@ public class AppManager
     private static readonly string CurrentDirectory =
         Path.GetDirectoryName(AppContext.BaseDirectory)!;
 
-    private readonly PowerLimitCalculator _powerLimitCalculator = null!;
-    private readonly TsConfigManager _tsConfigManager = null!;
+    public readonly PowerLimitCalculator PowerLimitCalculator = null!;
+    public readonly TsConfigManager TsConfigManager = null!;
     public readonly ProcessManager ProcessManager = null!;
     public AppSettings? Settings;
 
@@ -35,30 +35,16 @@ public class AppManager
             return;
         }
 
-        _powerLimitCalculator = new PowerLimitCalculator(Settings.LongPowerBase, Settings.ShortPowerBase,
-            Settings.HexPrefix, Settings.Step);
+        PowerLimitCalculator =
+            new PowerLimitCalculator(Settings.LongPowerBase, Settings.ShortPowerBase,
+                Settings.HexPrefix, Settings.Step, _logger.ForContext<PowerLimitCalculator>());
 
-        _tsConfigManager =
+        TsConfigManager =
             new TsConfigManager(Path.Combine(CurrentDirectory, TsSettingsFile), LongPowerKey, ShortPowerKey,
                 _parser, _logger.ForContext<TsConfigManager>());
 
         ProcessManager = new ProcessManager(Settings.ProcessName,
             Path.Combine(CurrentDirectory, $"{Settings.ProcessName}.exe"), _logger.ForContext<ProcessManager>());
-    }
-
-    /// <summary>
-    /// Sets Power Limits in the ThrottleStop's configuration file
-    /// </summary>
-    /// <param name="longPowerLimit">Long Power Limit in Watts</param>
-    /// <param name="shortPowerLimit">Short Power Limit in Watts</param>
-    public void SetPowerLimits(int longPowerLimit, int shortPowerLimit)
-    {
-        var result = _powerLimitCalculator.Calculate(longPowerLimit, shortPowerLimit);
-
-        if (result.Item1 is null || result.Item2 is null)
-            return;
-
-        _tsConfigManager.ReplacePowerLimits(result.Item1, result.Item2);
     }
 
     private void SetupAppSettings()
@@ -69,11 +55,12 @@ public class AppManager
             Settings = new AppSettings
             {
                 // General
+                CalculatePowerLimits = bool.Parse(data[AppSettings.GeneralSection]["CalculatePowerLimits"]),
                 SetPowerLimits = bool.Parse(data[AppSettings.GeneralSection]["SetPowerLimits"]),
                 RestartThrottleStop = bool.Parse(data[AppSettings.GeneralSection]["RestartThrottleStop"]),
                 // Calculator
-                LongPowerBase = int.Parse(data[AppSettings.CalculatorSection]["LongPowerBase"]),
-                ShortPowerBase = int.Parse(data[AppSettings.CalculatorSection]["ShortPowerBase"]),
+                LongPowerBase = data[AppSettings.CalculatorSection]["LongPowerBase"],
+                ShortPowerBase = data[AppSettings.CalculatorSection]["ShortPowerBase"],
                 Step = int.Parse(data[AppSettings.CalculatorSection]["Step"]),
                 HexPrefix = data[AppSettings.CalculatorSection]["HexPrefix"],
                 // Process

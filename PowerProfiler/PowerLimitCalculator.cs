@@ -1,26 +1,21 @@
-﻿using Serilog;
+﻿using System.Numerics;
+using Serilog;
 
 namespace PowerProfiler;
 
-internal enum PowerLimitType
-{
-    Long,
-    Short
-}
-
 public class PowerLimitCalculator
 {
-    private static readonly ILogger Logger = Log.ForContext<PowerLimitCalculator>();
+    private readonly ILogger _logger;
 
     /// <summary>
-    /// Base value for Long Power PL1. This means Long Power is 0W. HEX: 0x00DF8000
+    /// Base value for Long Power PL1 in HEX. This means Long Power is 0W.
     /// </summary>
-    private readonly int _longPowerBase; // POWERLIMITEAX 0x00DF8000
+    private readonly string _powerlimiteax;
 
     /// <summary>
-    /// Base value for Short Power PL2. This means Short Power is 0W. HEX: 0x00DF8000
+    /// Base value for Short Power PL2 in HEX. This means Short Power is 0W.
     /// </summary>
-    private readonly int _shortPowerBase; // POWERLIMITEDX 0x00438000
+    private readonly string _powerlimitedx;
 
     /// <summary>
     /// Prefix added to HEX
@@ -28,20 +23,21 @@ public class PowerLimitCalculator
     private readonly string _hexPrefix;
 
     /// <summary>
-    /// The value by which the decimal representation is changed.
+    /// The value by which the decimal representation is changed. This value means the following: Step Value = 1W.
     /// </summary>
     private readonly int _step;
 
-    public PowerLimitCalculator(int longPowerBase, int shortPowerBase, string hexPrefix, int step)
+    public PowerLimitCalculator(string powerlimiteax, string powerlimitedx, string hexPrefix, int step, ILogger logger)
     {
-        _longPowerBase = longPowerBase;
-        _shortPowerBase = shortPowerBase;
+        _powerlimiteax = powerlimiteax;
+        _powerlimitedx = powerlimitedx;
         _hexPrefix = hexPrefix;
         _step = step;
+        _logger = logger;
     }
 
     /// <summary>
-    /// Calculates PLs and transforms them into HEX representation.
+    /// Calculates PLs
     /// </summary>
     /// <param name="longPowerLimit">Long Power Limit in Watts</param>
     /// <param name="shortPowerLimit">Short Power Limit in Watts</param>
@@ -50,21 +46,23 @@ public class PowerLimitCalculator
     {
         if (longPowerLimit <= 0 || shortPowerLimit <= 0)
         {
-            Logger.Error("Power limits cannot be 0 or less than 0.");
+            _logger.Error("Power limits cannot be 0 or less than 0.");
             return (null, null);
         }
 
         if (longPowerLimit > shortPowerLimit)
         {
-            Logger.Error("Long Power cannot be greater than Short Power: {long} > {short}",
+            _logger.Error("Long Power cannot be greater than Short Power: {long} > {short}",
                 longPowerLimit, shortPowerLimit);
             return (null, null);
         }
 
-        var longHex = ConvertToHex(ConvertToDecimal(longPowerLimit, PowerLimitType.Long));
-        var shortHex = ConvertToHex(ConvertToDecimal(shortPowerLimit, PowerLimitType.Short));
+        _logger.Information("Calculating power limits.");
 
-        Logger.Information("POWERLIMITEAX={long}\tPOWERLIMITEDX={short}", longHex, shortHex);
+        var longHex = CalculateHex(_powerlimiteax, longPowerLimit);
+        var shortHex = CalculateHex(_powerlimitedx, shortPowerLimit);
+
+        _logger.Information("POWERLIMITEAX={long}\tPOWERLIMITEDX={short}", longHex, shortHex);
 
         return (longHex, shortHex);
     }
@@ -72,17 +70,18 @@ public class PowerLimitCalculator
     /// <summary>
     /// Transforms PL in Watts to decimal representation
     /// </summary>
-    /// <param name="powerLimitWatts">Power Limit in Watts</param>
-    /// <param name="type">Type of Power Limit</param>
+    /// <param name="powerLimit">Power Limit in Watts</param>
     /// <returns>Decimal representation</returns>
-    private int ConvertToDecimal(int powerLimitWatts, PowerLimitType type) =>
-        powerLimitWatts * _step + (type == PowerLimitType.Long ? _longPowerBase : _shortPowerBase);
+    private int ConvertWattsToDecimal(int powerLimit) =>
+        powerLimit * _step;
 
     /// <summary>
-    /// Transforms PL in decimal representation to HEX representation.
+    /// Calculates PL and returns in HEX
     /// </summary>
-    /// <param name="powerLimitDecimal">Power Limit in decimal representation</param>
-    /// <returns>Hex representation</returns>
-    private string ConvertToHex(int powerLimitDecimal) =>
-        _hexPrefix + powerLimitDecimal.ToString("X");
+    /// <param name="powerLimitBase">Long or Short PL Base Value</param>
+    /// <param name="powerLimit">Decimal Power Limit</param>
+    /// <returns>PL in HEX</returns>
+    private string CalculateHex(string powerLimitBase, int powerLimit) =>
+        _hexPrefix + (BigInteger.Parse(powerLimitBase, System.Globalization.NumberStyles.HexNumber) +
+                      ConvertWattsToDecimal(powerLimit)).ToString("X");
 }
