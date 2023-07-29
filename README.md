@@ -22,6 +22,14 @@ An example with an image below.
 
 ### How to use the application
 
+#### (IMPORTANT) Before using PowerProfiler
+
+Before using PowerProfiler, in the ThrottleStop application in the TPL tab,
+you need to uncheck "Disable Controls" and check the boxes for Long Power PL1 and Short Power PL2 along with their "
+Clamps".
+
+![TPL Example](https://i.imgur.com/xPDbT1k.png "T")
+
 #### The application is launched with a terminal like this:
 
 ```
@@ -42,7 +50,8 @@ Example using with a terminal:
 
 The archive will contain some .bat files as an example.
 
-You can create an unlimited number of .bat files. For example, you can put .bat files in the ThrottleStop folder with the following content:
+You can create an unlimited number of .bat files. For example, you can put .bat files in the ThrottleStop folder with
+the following content:
 
 ````
 @echo off
@@ -52,6 +61,7 @@ PowerProfiler.exe 60 95
 REM You can use "pause" if you don't want the console to close automatically.
 pause
 ````
+
 ![Bat Files Example](https://i.imgur.com/Ni75mLt.png "Bat files")
 
 For example, further you can create shortcuts to these files and place them anywhere.
@@ -68,14 +78,45 @@ sections: `General`, `Calculator`, `Process`.
 |   SetPowerLimits     	   |    True       	     |   True/False     	    |           If true, sets calculated Power Limits Values in ThrottleStop.ini file.                                                                                                                                                                                                       	            |  Safe    	   |
 |  RestartThrottleStop  	  |    True       	     |   True/False     	    | If true, ThrottleStop will be restarted.                                                                                                                                                                                                                                                          	 |  Safe    	   |
 |            	             |          	          |           	           |                                                                                                                                                  	                                                                                                                                                  |      	       |
-| **Calculator Section** 	 |          	          |           	           | The section is responsible for calculating the HEX values for the ThrottleStop.ini file. Danger zone, better not to change anything.                                                                                                                                                              	 |  Unsafe   	  |
-|   LongPowerBase     	    |   DF8000     	    |      HEX      	       |                          Base value for Long Power PL1 - POWERLIMITEAX in ThrottleStop.ini. This value means 0W in HEX. Change carefully only if your base value is different.                                                                                           	                          |  Unsafe   	  |
-|   ShortPowerBase     	   |   438000      	    |       HEX    	        |                          Base value for Short Power PL1 - POWERLIMITEDX in ThrottleStop.ini. This value means 0W in HEX. Change carefully only if your base value is different.                                                                                          	                          |  Unsafe   	  |
+| **Calculator Section** 	 |          	          |           	           |                             The section is responsible for calculating the HEX values for the ThrottleStop.ini file.                                                                                                                                                  	                             |  Unsafe   	  |
+|   LongPowerBase     	    |    DF8000     	     |      HEX      	       |                          Base value for Long Power PL1 - POWERLIMITEAX in ThrottleStop.ini. This value means 0W in HEX. Change carefully only if your base value is different.                                                                                           	                          |  Unsafe   	  |
+|   ShortPowerBase     	   |    438000      	    |       HEX    	        |                          Base value for Short Power PL1 - POWERLIMITEDX in ThrottleStop.ini. This value means 0W in HEX. Change carefully only if your base value is different.                                                                                          	                          |  Unsafe   	  |
 |     Step          	      |     8         	     |     Integer     	     |          This value means the following: Step Value = 1W. That is, if you decrease or increase by 1W in ThrottleStop, then the stored value of POWERLIMITEAX and POWERLIMITEDX options in ThrottleStop.ini is changed to Step Value in HEX. It is not recommended to change this value. 	           |  Unsafe   	  |
 |    HexPrefix       	     |    0x00       	     |       HEX    	        | The prefix that is added to the computed values. Change only if in your case the prefixes of the  POWERLIMITEAX and POWERLIMITEDX options in ThrottleStop.ini are different.                                                                                                                      	 |  Unsafe   	  |
 |            	             |          	          |           	           |                                                                                                                                                  	                                                                                                                                                  |      	       |
 |  **Process Section**  	  |          	          |           	           | The section is responsible for working with the process. Safe, because on version 1.0.0 it is only responsible for working with the ThrottleStop process.                                                                                                                                         	 |  Safe    	   |
 |    ProcessName      	    |  ThrottleStop   	   |      Text      	      | Allows you to change the process name. For example, if you changed the name of the ThrottleStop.exe file and now the process  is called differently in the task manager, this option can help you.                                                                                                	 |  Safe    	   |
+
+#### (IMPORTANT) How to calculate LongPowerBase and ShortPowerBase
+
+Due to the fact that I do not have a huge number of CPUs of different generations on hand and have no knowledge of how
+ThrottleStop sets HEX values in its configuration file, your LongPowerBase and ShortPowerBase values may not match the
+preset ones.
+
+I highly recommend calculating your base values like this:
+
+1. Check the values of Long Power PL1 and Short Power PL2 in ThrottleStop (make sure you
+   read [this](#important-before-using-powerprofiler)).
+2. Open [HEX calculator](https://www.calculator.net/hex-calculator.html).
+3. In `Convert Decimal Value to Hexadecimal Value` enter the result of `multiplying the Long or Short Power by 8` and
+   click `Calculate`.
+4. In `Hexadecimal Calculation—Add, Subtract, Multiply, or Divide`
+
+   4.1. choose `subtract operation`
+
+   4.2. `1st argument: POWERLIMITEAX or POWERLIMITEDX value` from ThrottleStop.ini without `0x00`
+
+   4.3. `2nd argument is result of 3rd step`
+
+   4.4. click `Calculate`.
+5. You got the base value, you can enter it in PowerProfiler.ini.
+
+Example step by step:
+
+1. Long Power PL1 = 40W
+2. 40 * 8 = 320. Result: 140
+3. POWERLIMITEAX=0x00DF8140. So: DF8140 - 140 = DF8000
+4. my LongPowerBase = DF8000
 
 ## For developers
 
