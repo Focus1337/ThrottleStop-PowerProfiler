@@ -8,8 +8,8 @@ public class AppManager
 {
     private const string AppSettingsFile = "PowerProfiler.ini";
     private const string TsSettingsFile = "ThrottleStop.ini";
-    private const string LongPowerLine = "POWERLIMITEAX";
-    private const string ShortPowerLine = "POWERLIMITEDX";
+    private const string LongPowerKey = "POWERLIMITEAX";
+    private const string ShortPowerKey = "POWERLIMITEDX";
     private readonly ILogger _logger;
     private readonly FileIniDataParser _parser;
 
@@ -39,7 +39,7 @@ public class AppManager
             Settings.HexPrefix, Settings.Step);
 
         _tsConfigManager =
-            new TsConfigManager(Path.Combine(CurrentDirectory, TsSettingsFile), LongPowerLine, ShortPowerLine,
+            new TsConfigManager(Path.Combine(CurrentDirectory, TsSettingsFile), LongPowerKey, ShortPowerKey,
                 _parser, _logger.ForContext<TsConfigManager>());
 
         ProcessManager = new ProcessManager(Settings.ProcessName,
