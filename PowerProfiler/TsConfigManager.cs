@@ -1,4 +1,5 @@
-﻿using IniParser;
+﻿using System.Text;
+using IniParser;
 using IniParser.Model;
 using Serilog;
 
@@ -46,7 +47,7 @@ public class TsConfigManager
 
     private void ReplaceKeyData(string key, string value)
     {
-        var data = _parser.ReadFile(_filePath);
+        var data = _parser.ReadFile(_filePath, Encoding.ASCII);
         var section = data.Sections.GetSectionData("ThrottleStop");
 
         if (section is null)
@@ -63,7 +64,7 @@ public class TsConfigManager
         }
 
         section.Keys.SetKeyData(new KeyData(key) { KeyName = key, Value = value });
-        _parser.WriteFile(_filePath, data);
+        _parser.WriteFile(_filePath, data, Encoding.ASCII);
         _logger.Information("{key} applied", key);
     }
 }
