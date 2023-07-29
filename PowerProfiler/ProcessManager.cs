@@ -24,9 +24,8 @@ public class ProcessManager
     /// </summary>
     public void RestartThrottleStop()
     {
-        _logger.Information("Closing process");
+        _logger.Information("Restarting {process}.", _processName);
         CloseProcess(_processName);
-        _logger.Information("Starting process");
         StartProcess(_filePath);
     }
 

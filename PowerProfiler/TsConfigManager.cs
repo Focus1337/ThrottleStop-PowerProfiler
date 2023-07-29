@@ -27,11 +27,11 @@ public class TsConfigManager
     }
 
     /// <summary>
-    /// Replaces the Power Limit values in the ThrottleStop config file
+    /// Applies Power Limits in the ThrottleStop's configuration file
     /// </summary>
     /// <param name="longPower">Long Power HEX representation</param>
     /// <param name="shortPower">Short Power HEX representation</param>
-    public void ReplacePowerLimits(string longPower, string shortPower)
+    public void SetPowerLimits(string longPower, string shortPower)
     {
         try
         {

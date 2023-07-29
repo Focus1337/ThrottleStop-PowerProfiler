@@ -30,17 +30,16 @@ try
     if (appManager.Settings is null)
         return;
 
-    if (appManager.Settings.SetPowerLimits)
-    {
-        Log.Information("Setting power limits.");
-        appManager.SetPowerLimits(longPower, shortPower);
-    }
+    (string?, string?) result = (null, null);
+    if (appManager.Settings.CalculatePowerLimits)
+        result = appManager.PowerLimitCalculator.Calculate(longPower, shortPower);
+
+    if (appManager.Settings.CalculatePowerLimits && appManager.Settings.SetPowerLimits && result.Item1 is not null &&
+        result.Item2 is not null)
+        appManager.TsConfigManager.SetPowerLimits(result.Item1, result.Item2);
 
     if (appManager.Settings.RestartThrottleStop)
-    {
-        Log.Information("Restarting ThrottleStop.");
         appManager.ProcessManager.RestartThrottleStop();
-    }
 }
 catch (Exception ex)
 {
